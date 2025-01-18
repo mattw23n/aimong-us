@@ -5,4 +5,4 @@ class AIAgent(BaseModel):
     name: str = "AI Agent"
     # TODO: Change the prompt
     prompt: str = "You are participating in a game chat on a specific topic. Respond naturally."
-    is_active: bool = True  # Track if the AI is actively participating
+    is_active: bool = True
