@@ -3,11 +3,13 @@ import './App.css';
 import MainPage from './pages/mainPage';
 import { Route, Routes } from 'react-router-dom';
 import Lobby from './pages/lobby';
-import Room from './pages/game';
+import { WebSocketProvider } from './WebSocketContext';
+import Game from './pages/game';
 
 
 function App() {
   return (
+    <WebSocketProvider>
     <div className="App">
       <nav>
 
@@ -16,10 +18,11 @@ function App() {
           <Routes>
             <Route path="/" element={<MainPage />} />
             <Route path="/lobby" element={<Lobby />} />
-            <Route path="/game" element={<Room />} />
+            <Route path="/game" element={<Game />} />
           </Routes>
         </main>
     </div>
+    </WebSocketProvider>
   );
 }
 
