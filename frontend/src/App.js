@@ -10,18 +10,15 @@ import Game from './pages/game';
 function App() {
   return (
     <WebSocketProvider>
-    <div className="App">
-      <nav>
-
-      </nav>
-      <main className="container mx-auto p-4">
-          <Routes>
-            <Route path="/" element={<MainPage />} />
-            <Route path="/lobby" element={<Lobby />} />
-            <Route path="/game" element={<Game />} />
-          </Routes>
+      <div className="App">
+        <main className="container mx-auto p-4">
+            <Routes>
+              <Route path="/" element={<MainPage />} />
+              <Route path="/lobby" element={<Lobby />} />
+              <Route path="/game" element={<Game />} />
+            </Routes>
         </main>
-    </div>
+      </div>
     </WebSocketProvider>
   );
 }

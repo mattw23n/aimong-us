@@ -11,6 +11,7 @@ export default function Lobby() {
     const { ws } = useWebSocket();
     const sessionId = location.state?.sessionId;
 
+
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -98,6 +99,7 @@ export default function Lobby() {
             console.error('Error starting game:', error);
           }
       };
+
 
     return (
         <div className="font-sans text-center mx-auto mt-20">
