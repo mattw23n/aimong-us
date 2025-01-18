@@ -5,7 +5,7 @@ import { useWebSocket } from '../WebSocketContext';
 export default function Game() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
-    const [remainingTime, setRemainingTime] = useState(10); // 5 minutes in seconds
+    const [remainingTime, setRemainingTime] = useState(300); // 5 minutes in seconds
     const location = useLocation();
     const { ws } = useWebSocket();
     const sessionId = location.state?.sessionId;

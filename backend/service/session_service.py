@@ -8,7 +8,10 @@ from model.message import Message
 import random
 import asyncio
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 class SessionService:
     sessions: Dict[str, GameSession] = {}
@@ -75,7 +78,9 @@ class SessionService:
 
     @classmethod
     async def generate_ai_response(cls, session: GameSession, context: str):
-        client = OpenAI(api_key="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")
+        client = OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY")
+        )
         ai_player = session.ai_player
         if not ai_player:
             return
@@ -122,18 +127,10 @@ class SessionService:
                     "content": context
                 }
             ],
-            response_format={
-                "type": "text"
-            },
-            temperature=1,
-            max_completion_tokens=256,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
         )
 
         # Extract the AI's response from the API response
-        ai_message = response["choices"][0]["message"]["content"]
+        ai_message = response.choices[0].message.content
 
         # Broadcast AI's response
         json_message = {
