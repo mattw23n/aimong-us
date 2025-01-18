@@ -12,3 +12,4 @@ class GameSession(BaseModel):
     ai_player: Optional[Player] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    

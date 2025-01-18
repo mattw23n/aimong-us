@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List
 from fastapi import WebSocket
 from datetime import datetime
@@ -33,14 +34,14 @@ class SessionService:
 
     @classmethod
     async def handle_message(cls, session: GameSession, player: Player, data: str):
-        message = Message(
-            sender_id=player.id,
-            sender_name=player.name,
-            content=data,
-            timestamp=datetime.now(),
-        )
-        session.messages.append(message)
-        await cls.broadcast_message(session.session_id, f"{message.sender_name}: {message.content}")
+        # Instead of sending "Player X: { ... }", just send JSON
+        # For example:
+        json_message = {
+            "type": "chat",
+            "author": player.name,
+            "message": data
+        }
+        await cls.broadcast_message(session.session_id, json_message)
 
     @classmethod
     async def remove_player_from_session(cls, session: GameSession, player: Player, websocket: WebSocket):
@@ -56,12 +57,35 @@ class SessionService:
             raise ValueError("Session does not exist")
         # Keep track of disconnected WebSockets
         disconnected_websockets = []
+        json_str = json.dumps(message)
         for websocket in cls.connections[session_id]:
             try:
-                await websocket.send_text(message)
+                await websocket.send_text(json_str)
             except Exception:
                 disconnected_websockets.append(websocket)
 
         # Remove disconnected WebSockets
         for websocket in disconnected_websockets:
             cls.connections[session_id].remove(websocket)
+
+    @classmethod
+    def get_player_count(cls, session_id: str) -> int:
+        """Get the number of players currently in the session."""
+        if session_id not in cls.sessions:
+            raise ValueError(f"Session {session_id} does not exist")
+        return len(cls.sessions[session_id].players)
+    
+    @classmethod
+    async def broadcast_start_game(cls, session_id: str):
+        if session_id in cls.connections:
+            data = {
+                "type": "start_game",
+                "message": "Game is starting now!"
+            }
+            for connection in cls.connections[session_id]:
+                await connection.send_json(data)
+
+    @classmethod
+    async def start_game_for_session(cls, session_id: str):
+        # Any server logic if needed
+        await cls.broadcast_start_game(session_id)

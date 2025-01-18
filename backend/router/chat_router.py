@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from datetime import datetime
 from model.player import Player
@@ -35,3 +36,20 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     except WebSocketDisconnect:
         # Handle player disconnection
         await SessionService.remove_player_from_session(session, player, websocket)
+
+# Get the number of players in a session
+@router.get("/get_players/{session_id}")
+def get_player_count(session_id: str):
+    try:
+        player_count = SessionService.get_player_count(session_id)
+        return {"session_id": session_id, "player_count": player_count, "max_players": 5}
+    except ValueError as e:
+        return {"error": str(e)}
+
+@router.post("/start_game")
+async def start_game(session_id: str):
+    try:
+        await SessionService.start_game_for_session(session_id)
+        return {"status": "Game started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
