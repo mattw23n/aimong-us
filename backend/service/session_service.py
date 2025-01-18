@@ -227,7 +227,7 @@ class SessionService:
             raise ValueError(f"Session {session_id} not found.")
 
         # Broadcast that the game is starting
-        start_message = {"type": "game_start", "message": "The game has started!"}
+        start_message = {"type": "start_game", "message": "The game has started!"}
         await cls.broadcast_message(session_id, start_message)
 
         # Start the game timer
