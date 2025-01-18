@@ -9,7 +9,7 @@ class GameSession(BaseModel):
     topic: str
     players: List[Player] = []
     messages: List[Message] = []
-    ai_agent:Optional[AIAgent] = None
+    ai_player: Optional[Player] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     

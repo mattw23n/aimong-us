@@ -26,15 +26,15 @@ class SessionService:
 
     @classmethod
     def create_session(cls) -> str:
-    """Create a new game session and initialize it with an AI player."""
-    session_id = str(len(cls.sessions) + 1)
-    session = GameSession(session_id=session_id, topic="Localhost Group Chat")
-    cls.sessions[session_id] = session
-    cls.connections[session_id] = []
+        """Create a new game session and initialize it with an AI player."""
+        session_id = str(len(cls.sessions) + 1)
+        session = GameSession(session_id=session_id, topic="Localhost Group Chat")
+        cls.sessions[session_id] = session
+        cls.connections[session_id] = []
 
-    cls.create_ai_player(session_id)
-    
-    return session_id
+        cls.create_ai_player(session_id)
+        
+        return session_id
 
     @classmethod
     def get_or_create_session(cls, session_id: str) -> GameSession:
