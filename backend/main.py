@@ -1,11 +1,8 @@
 from fastapi import FastAPI
+from router.chat_router import router as chat_router
 
+# Initialize the FastAPI app
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the FastAPI application"}
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
+# Include the chat router
+app.include_router(chat_router)
