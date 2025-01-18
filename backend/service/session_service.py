@@ -5,6 +5,9 @@ from datetime import datetime
 from model.session import GameSession
 from model.player import Player
 from model.message import Message
+import random
+import asyncio
+from openai import OpenAI
 
 
 class SessionService:
@@ -72,6 +75,7 @@ class SessionService:
 
     @classmethod
     async def generate_ai_response(cls, session: GameSession, context: str):
+        client = OpenAI(api_key="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")
         ai_player = session.ai_player
         if not ai_player:
             return
@@ -100,17 +104,35 @@ class SessionService:
         Your player name: {name}
         """.strip()
 
-        # Call the fine-tuned AI model
-        response = openai.ChatCompletion.create(
-            model="ft:gpt-4o-mini-2024-07-18:personal:ai-impostor-coba",
+        # Call the fine-tuned AI model with the specified format
+        response = client.chat.completions.create(
+            model="ft:gpt-4o-mini-2024-07-18:personal:ai-impostor-coba:Ar2Wjr63",
             messages=[
-                {"role": "system", "content": system_prompt.format(name=ai_player.name)},
-                {"role": "user", "content": context}  # Latest player message
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": system_prompt.format(name=ai_player.name)
+                        }
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": context
+                }
             ],
-            max_tokens=150,
-            temperature=0.8
+            response_format={
+                "type": "text"
+            },
+            temperature=1,
+            max_completion_tokens=256,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
         )
 
+        # Extract the AI's response from the API response
         ai_message = response["choices"][0]["message"]["content"]
 
         # Broadcast AI's response
