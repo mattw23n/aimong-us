@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from datetime import datetime
 from model.player import Player
@@ -44,3 +45,11 @@ def get_player_count(session_id: str):
         return {"session_id": session_id, "player_count": player_count, "max_players": 5}
     except ValueError as e:
         return {"error": str(e)}
+
+@router.post("/start_game")
+async def start_game(session_id: str):
+    try:
+        await SessionService.start_game_for_session(session_id)
+        return {"status": "Game started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

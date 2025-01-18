@@ -13,4 +13,4 @@ class GameSession(BaseModel):
     ai_agent:Optional[AIAgent] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    votes: Dict[int, int] = {}  # voter_id -> target_id
+    
