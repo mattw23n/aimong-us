@@ -10,6 +10,7 @@ import asyncio
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 load_dotenv()
 
@@ -184,5 +185,141 @@ class SessionService:
 
     @classmethod
     async def start_game_for_session(cls, session_id: str):
-        # Any server logic if needed
-        await cls.broadcast_start_game(session_id)
+        """
+        Mark the session as active and start the game timer.
+        """
+        session = cls.sessions.get(session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found.")
+
+        # Broadcast that the game is starting
+        start_message = {"type": "game_start", "message": "The game has started!"}
+        await cls.broadcast_message(session_id, start_message)
+
+        # Start the game timer
+        session.start_time = datetime.now()
+        session.end_time = session.start_time + timedelta(minutes=0.15)
+        asyncio.create_task(cls.start_game_timer(session_id))
+
+
+    @classmethod
+    async def start_game_timer(cls, session_id: str):
+        """
+        Starts the 5-minute timer for a session and triggers voting at the end.
+        """
+        session = cls.sessions.get(session_id)
+        if not session:
+            return
+
+        # Wait for 5 minutes (300 seconds)
+        await asyncio.sleep(10)
+
+        # Trigger the voting phase
+        await cls.initiate_voting(session_id)
+
+    @classmethod
+    def cast_vote(cls, session_id: str, voter_id: int, voted_id: int) -> bool:
+        """
+        Registers a vote from one player to another.
+
+        Args:
+            session_id (str): The ID of the game session.
+            voter_id (int): The ID of the player casting the vote.
+            voted_id (int): The ID of the player being voted for.
+
+        Returns:
+            bool: True if the vote is valid and successfully cast, False otherwise.
+        """
+        # Retrieve the session
+        session = cls.sessions.get(session_id)
+        if not session:
+            return False
+
+        # Validate voter and target
+        voter = next((p for p in session.players if p.id == voter_id), None)
+        target = next((p for p in session.players if p.id == voted_id), None)
+
+        # Ensure both voter and target are valid and not eliminated
+        if not voter or not target or voter in session.eliminated or target in session.eliminated:
+            return False
+
+        # Register the vote
+        session.votes[voter_id] = voted_id
+        return True
+
+    @classmethod
+    async def initiate_voting(cls, session_id: str):
+        """
+        Initiates the voting process for a session.
+        """
+        # Retrieve the session using session_id
+        session = cls.sessions.get(session_id)
+        if not session:
+            await cls.broadcast_message(session_id, {"type": "error", "message": "Session not found."})
+            return
+
+        # Broadcast voting start
+        voting_start_message = {
+            "type": "voting_start",
+            "message": "Time is up! Cast your votes for who you think the AI is."
+        }
+        await cls.broadcast_message(session_id, voting_start_message)
+
+        # Allow time for voting
+        await asyncio.sleep(30)  # Adjust duration as needed
+
+        # Tally votes
+        vote_counts = {}
+        for target_id in session.votes.values():
+            vote_counts[target_id] = vote_counts.get(target_id, 0) + 1
+
+        # Broadcast voting results
+        vote_results = {player_id: count for player_id, count in vote_counts.items()}
+        await cls.broadcast_message(session_id, {
+            "type": "voting_result",
+            "message": f"Voting has concluded. Results: {json.dumps(vote_results)}"
+        })
+
+        if not vote_counts:
+            await cls.broadcast_message(session_id, {"type": "voting_result", "message": "No votes cast. Game will now end."})
+            await cls.end_session(session_id)
+            return
+
+        # Determine the player with the most votes
+        highest_votes = max(vote_counts.values())
+        eliminated_id = next((target_id for target_id, count in vote_counts.items() if count == highest_votes), None)
+
+        # Handle elimination
+        eliminated_player = next((p for p in session.players if p.id == eliminated_id), None)
+        if eliminated_player:
+            session.players.remove(eliminated_player)
+            session.eliminated.append(eliminated_player)  # Add to eliminated list
+
+            # Broadcast elimination
+            elimination_message = {
+                "type": "elimination",
+                "message": f"Player {eliminated_player.name} has been eliminated."
+            }
+            await cls.broadcast_message(session_id, elimination_message)
+
+            # Check if the eliminated player is the AI
+            if eliminated_player.is_ai:
+                await cls.broadcast_message(session_id, {"type": "game_over", "message": "Game Over! The players win!"})
+            else:
+                await cls.broadcast_message(session_id, {"type": "game_over", "message": "Game Over! The players failed to eliminate the AI."})
+
+            # End the session
+            await cls.end_session(session_id)
+        else:
+            await cls.broadcast_message(session_id, {"type": "error", "message": "Error determining elimination. Game will now end."})
+            await cls.end_session(session_id)
+
+    @classmethod
+    async def end_session(cls, session_id: str):
+        """Ends the session, notifying all players and closing the connections."""
+        session = cls.sessions.get(session_id)
+        if not session:
+            return
+        await cls.broadcast_message(session_id, {"type": "game_over", "message": "The game has ended."})
+        cls.sessions.pop(session_id, None)
+        cls.connections.pop(session_id, None)
