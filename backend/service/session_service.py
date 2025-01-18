@@ -72,10 +72,33 @@ class SessionService:
 
     @classmethod
     async def schedule_ai_response(cls, session: GameSession, context: str):
-        # Simulate a delay before the AI responds
-        delay = random.uniform(1, 3)  # 1-3 seconds delay
+        """
+        Decide whether the AI should respond and schedule the response.
+        Prioritize accusations if the AI is mentioned.
+        """
+        ai_player = session.ai_player
+        if not ai_player:
+            return
+
+        # Check if the AI is being accused (e.g., its name is mentioned)
+        is_accused = ai_player.name.lower() in context.lower()
+
+        if is_accused:
+            # Accusation detected; AI should definitely respond
+            await asyncio.sleep(random.uniform(2, 4))  # Add a natural delay
+            await cls.generate_accusation_response(session, context)
+            return
+
+        # Otherwise, decide probabilistically whether the AI should respond (e.g., 70% chance)
+        should_respond = random.random() < 0.7
+        if not should_respond:
+            return  # Skip response to avoid suspicion
+
+        # Add a natural delay before responding
+        delay = random.uniform(2, 6)  # 2 to 6 seconds delay
         await asyncio.sleep(delay)
         await cls.generate_ai_response(session, context)
+
 
     @classmethod
     async def generate_ai_response(cls, session: GameSession, context: str):
@@ -198,7 +221,7 @@ class SessionService:
 
         # Start the game timer
         session.start_time = datetime.now()
-        session.end_time = session.start_time + timedelta(minutes=0.15)
+        session.end_time = session.start_time + timedelta(minutes=5)
         asyncio.create_task(cls.start_game_timer(session_id))
 
 
@@ -212,7 +235,7 @@ class SessionService:
             return
 
         # Wait for 5 minutes (300 seconds)
-        await asyncio.sleep(10)
+        await asyncio.sleep(300)
 
         # Trigger the voting phase
         await cls.initiate_voting(session_id)
@@ -266,7 +289,7 @@ class SessionService:
         await cls.broadcast_message(session_id, voting_start_message)
 
         # Allow time for voting
-        await asyncio.sleep(30)  # Adjust duration as needed
+        await asyncio.sleep(300)  # Adjust duration as needed
 
         # Tally votes
         vote_counts = {}
