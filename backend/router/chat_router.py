@@ -53,8 +53,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         "message": "Invalid vote. Please try again."
                     })
     except WebSocketDisconnect:
-        # Handle player disconnection
-        await SessionService.remove_player_from_session(session, player, websocket)
+            try:
+                await SessionService.remove_player_from_session(session, player, websocket)
+            except KeyError as e:
+                print(f"KeyError during player removal: {e}")  # Log the error for debugging
 
 # Get the number of players in a session
 @router.get("/get_players/{session_id}")

@@ -143,10 +143,21 @@ class SessionService:
 
     @classmethod
     async def remove_player_from_session(cls, session: GameSession, player: Player, websocket: WebSocket):
+        """
+        Removes a player from the session and disconnects the WebSocket.
+        """
         if player in session.players:
             session.players.remove(player)
+
+        # Handle missing session ID in cls.connections
+        if session.session_id not in cls.connections:
+            print(f"Session ID {session.session_id} not found in connections. Skipping removal.")
+            return
+
         if websocket in cls.connections[session.session_id]:
             cls.connections[session.session_id].remove(websocket)
+
+        # Broadcast the disconnection
         await cls.broadcast_message(session.session_id, f"{player.name} has left the session.")
 
     @classmethod
@@ -316,10 +327,18 @@ class SessionService:
 
     @classmethod
     async def end_session(cls, session_id: str):
-        """Ends the session, notifying all players and closing the connections."""
+        """
+        Ends the session, notifying all players and closing the connections.
+        """
         session = cls.sessions.get(session_id)
         if not session:
+            print(f"Session {session_id} not found during cleanup.")
             return
+
+        # Notify players that the game has ended
         await cls.broadcast_message(session_id, {"type": "game_over", "message": "The game has ended."})
+
+        # Clean up session and connections
         cls.sessions.pop(session_id, None)
         cls.connections.pop(session_id, None)
+        print(f"Session {session_id} successfully cleaned up.")
