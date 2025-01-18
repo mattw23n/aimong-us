@@ -65,3 +65,11 @@ class SessionService:
         # Remove disconnected WebSockets
         for websocket in disconnected_websockets:
             cls.connections[session_id].remove(websocket)
+
+    @classmethod
+    def get_player_count(cls, session_id: str) -> int:
+        """Get the number of players currently in the session."""
+        if session_id not in cls.sessions:
+            raise ValueError(f"Session {session_id} does not exist")
+        return len(cls.sessions[session_id].players)
+
