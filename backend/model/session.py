@@ -3,7 +3,6 @@ from typing import Dict, List, Optional
 from datetime import datetime
 from model.player import Player
 from model.message import Message
-from model.ai_agent import AIAgent
 
 class GameSession(BaseModel):
     session_id: str

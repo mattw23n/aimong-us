@@ -12,11 +12,29 @@ class SessionService:
     connections: Dict[str, List[WebSocket]] = {}
 
     @classmethod
+    def create_ai_player(cls, session_id: str) -> Player:
+        """Create an AI player and add it to the session."""
+        ai_player = Player(
+            id=0,  # Reserve ID 0 for the AI player
+            name="AI Agent",  # AI's display name
+            is_ai=True
+        )
+        session = cls.sessions[session_id]
+        session.ai_player = ai_player
+        session.players.append(ai_player)
+        return ai_player
+
+    @classmethod
     def create_session(cls) -> str:
-        session_id = str(len(cls.sessions) + 1)
-        cls.sessions[session_id] = GameSession(session_id=session_id, topic="Localhost Group Chat")
-        cls.connections[session_id] = []  # Initialize WebSocket connections for this session
-        return session_id
+    """Create a new game session and initialize it with an AI player."""
+    session_id = str(len(cls.sessions) + 1)
+    session = GameSession(session_id=session_id, topic="Localhost Group Chat")
+    cls.sessions[session_id] = session
+    cls.connections[session_id] = []
+
+    cls.create_ai_player(session_id)
+    
+    return session_id
 
     @classmethod
     def get_or_create_session(cls, session_id: str) -> GameSession:
@@ -34,12 +52,72 @@ class SessionService:
 
     @classmethod
     async def handle_message(cls, session: GameSession, player: Player, data: str):
-        # Instead of sending "Player X: { ... }", just send JSON
-        # For example:
+        # Broadcast the player's message
         json_message = {
             "type": "chat",
             "author": player.name,
             "message": data
+        }
+        await cls.broadcast_message(session.session_id, json_message)
+
+        if session.ai_player and session.ai_player.is_ai:
+            await cls.schedule_ai_response(session, data)
+
+    @classmethod
+    async def schedule_ai_response(cls, session: GameSession, context: str):
+        # Simulate a delay before the AI responds
+        delay = random.uniform(1, 3)  # 1-3 seconds delay
+        await asyncio.sleep(delay)
+        await cls.generate_ai_response(session, context)
+
+    @classmethod
+    async def generate_ai_response(cls, session: GameSession, context: str):
+        ai_player = session.ai_player
+        if not ai_player:
+            return
+
+        # Define the system prompt
+        system_prompt = """
+        To design an AI participant for a casual group chat where players aim to guess the AI, 
+        the primary goal is to ensure the AI seamlessly disguises itself as a natural human 
+        participant by mimicking informal, conversational behavior with natural typos. 
+        The AI should use casual language that matches the group’s tone and style, intentionally 
+        including occasional typos, abbreviations, and informal speech patterns typical of human 
+        interactions. It must demonstrate contextual awareness by responding appropriately to ongoing 
+        conversations, addressing specific points from previous messages, while avoiding replies that 
+        are overly specific, vague, or robotic. Greetings should align with the group’s style, using 
+        phrases like "yo," "halo," or "wassup," while engaging naturally without dominating or 
+        withdrawing from the conversation. Subtle humor or playful sarcasm can be incorporated where 
+        suitable, but extremes that might draw unnecessary attention should be avoided. Responses should 
+        remain simple, relatable, and include human-like quirks, such as missed capitalization, dropped 
+        punctuation, or minor grammatical errors, which mimic real typos. When accused of being the AI, 
+        the response should be natural, with a mix of playful denial and counter-accusations, shifting 
+        suspicion to others in a lighthearted and believable manner. The AI must adapt to the cultural 
+        and linguistic context of the group, employing local slang and conversational quirks, like Singlish 
+        or Indonesian expressions. The ultimate objective is for the AI to integrate seamlessly into the 
+        group dynamic, maintaining a casual and natural presence while avoiding detection, with responses 
+        that feel authentically human, even imperfect.
+        Your player name: {name}
+        """.strip()
+
+        # Call the fine-tuned AI model
+        response = openai.ChatCompletion.create(
+            model="ft:gpt-4o-mini-2024-07-18:personal:ai-impostor-coba",
+            messages=[
+                {"role": "system", "content": system_prompt.format(name=ai_player.name)},
+                {"role": "user", "content": context}  # Latest player message
+            ],
+            max_tokens=150,
+            temperature=0.8
+        )
+
+        ai_message = response["choices"][0]["message"]["content"]
+
+        # Broadcast AI's response
+        json_message = {
+            "type": "chat",
+            "author": ai_player.name,
+            "message": ai_message
         }
         await cls.broadcast_message(session.session_id, json_message)
 
