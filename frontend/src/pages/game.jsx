@@ -5,7 +5,7 @@ import { useWebSocket } from '../WebSocketContext';
 export default function Game() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
-    const [remainingTime, setRemainingTime] = useState(10);
+    const [remainingTime, setRemainingTime] = useState(300);
     const [playerAssignments, setPlayerAssignments] = useState({}); // Mapping of sessionId to pseudonym/color
     const location = useLocation();
     const { ws } = useWebSocket();
