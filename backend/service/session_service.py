@@ -300,7 +300,7 @@ class SessionService:
         await cls.broadcast_message(session_id, voting_start_message)
 
         # Allow time for voting
-        await asyncio.sleep(300)  # Adjust duration as needed
+        await asyncio.sleep(15)  # Adjust duration as needed
 
         # Tally votes
         vote_counts = {}

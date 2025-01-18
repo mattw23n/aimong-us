@@ -34,10 +34,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             # Receive and handle incoming actions
             data = await websocket.receive_json()
             action = data.get("action")
-
-            if action == "send_message":
+            if action == "chat":
                 # Handle chat messages
-                await SessionService.handle_message(session, player, data.get("content"))
+                await SessionService.handle_message(session, player, data.get("message"))
             elif action == "vote":
                 # Handle voting
                 voted_id = data.get("voted_id")
