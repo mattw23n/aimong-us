@@ -107,11 +107,13 @@ export default function Lobby() {
                 </div>
             )}
             <p className="text-4xl">Lobby</p>
-            <p>Currently hosted on Web Socket Port {sessionId}</p>
-            <p>Active Players: {activePlayerCount}</p>
-            <p>Waiting for players...</p>
+            <div className='text-lg my-4'>
+                <p>Currently hosted on  <b> Port {sessionId}</b> </p>
+                <p>Active Players: <b>{activePlayerCount}</b></p>
+            </div>
+            
 
-            <div className="flex flex-col items-center my-10">
+            <div className="flex flex-col items-center my-10 gap-4">
                 {anonymizedUsers.length > 0 ? (
                     anonymizedUsers.map((user) => (
                         <UserPill key={user.id} user={user} />
@@ -121,9 +123,17 @@ export default function Lobby() {
                 )}
             </div>
 
-            <button onClick={handleClick} className="p-4 rounded-xl bg-blue-500 text-white mt-4 hover:bg-blue-700">
-                Start Game
-            </button>
+            <div className='flex flex-col gap-y-2 items-center'>
+                <button onClick={handleClick} className="p-4 w-48 rounded-xl bg-blue-500 text-white mt-4 hover:bg-blue-700">
+                    Start Game
+                </button>
+
+                <button onClick={() => navigate('/')} className="p-4 w-48 rounded-xl bg-red-500 text-white mt-4 hover:bg-red-700">
+                    Leave Lobby
+                </button>
+
+            </div>
+            
         </div>
     );
 }

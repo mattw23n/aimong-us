@@ -5,6 +5,7 @@ import { useWebSocket } from '../WebSocketContext';
 export default function Game() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
+    const [remainingTime, setRemainingTime] = useState(10); // 5 minutes in seconds
     const location = useLocation();
     const { ws } = useWebSocket();
     const sessionId = location.state?.sessionId;
@@ -37,6 +38,20 @@ export default function Game() {
         }
     }, [messages]);
 
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setRemainingTime(prev => {
+                if (prev <= 0) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!inputMessage.trim()) return;
@@ -48,16 +63,25 @@ export default function Game() {
         setInputMessage('');
     };
 
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+
     return (
-        <div className="h-screen flex flex-col">
-            <div className="bg-gray-800 text-white p-4">
-                <h1 className="text-2xl">Game Room {sessionId}</h1>
-            </div>
+        <div className="h-screen flex flex-col items-center font-sans">
+            <p className='text-4xl mt-10'>Room {sessionId}</p>
+            <p className='text-xl'>Time Remaining: {formatTime(remainingTime)}</p>
+            {remainingTime === 0 && (
+                <p className='text-lg text-red-500'>Time's up!</p>
+            )}
 
             {/* Message Display Area */}
             <div 
                 ref={messageContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-2"
+                className="flex-1 w-[600px] overflow-x-none max-h-[500px] overflow-y-auto p-4 space-y-2 border-2 border-gray-300 rounded-xl my-4"
             >
             {messages.map((msg, index) => {
                 let parsedMessage;
@@ -69,16 +93,20 @@ export default function Game() {
                 }
 
                 return (
-                    <div key={index} className="flex flex-col items-start bg-gray-100 rounded-xl px-3 py-1.5 w-fit">
+                    <div
+                        key={index}
+                        className="flex flex-col items-start bg-gray-100 rounded-xl px-3 py-1.5 w-fit max-w-full text-wrap text-left text-pretty break-all "
+                    >
                         <span className="font-bold text-blue-600">{msg.author}</span>
-                        <span>{parsedMessage.message}</span>
+                        <span className=''>{parsedMessage.message}</span>
                     </div>
-                );
+                );                
+                                
             })}
             </div>
 
             {/* Message Input Form */}
-            <form onSubmit={handleSubmit} className="bg-gray-200 p-4">
+            <form onSubmit={handleSubmit} className="bg-gray-200 p-4 border-2 border-gray-300 w-[600px] rounded-xl">
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -86,10 +114,12 @@ export default function Game() {
                         onChange={(e) => setInputMessage(e.target.value)}
                         placeholder="Type your message..."
                         className="flex-1 p-2 rounded-lg border"
+                        disabled={remainingTime <= 0}
                     />
                     <button 
                         type="submit"
                         className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        disabled={remainingTime <= 0}
                     >
                         Send
                     </button>

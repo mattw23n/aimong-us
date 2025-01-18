@@ -58,26 +58,39 @@ export default function MainPage() {
     };
 
     return (
-        <div className="font-sans max-w-4xl mx-auto mt-20">
+        <div className="font-sans max-w-4xl mx-auto mt-20 flex flex-col items-center">
             <p className="text-4xl">AImong Us</p>
             <p className="text-xl">A modern unofficial Turing Test</p>
 
-            <button onClick={handleCreateLobby} className="p-4 rounded-xl bg-blue-500 text-white mt-4 hover:bg-blue-700">
-                Create Lobby
-            </button>
+            <div className="flex flex-col space-y-4 my-4">
+                
 
-            <div className="mt-4">
-                <input 
-                    type="text" 
-                    value={portNumber} 
-                    onChange={(e) => setPortNumber(e.target.value)} 
-                    placeholder="Enter port number" 
-                    className="p-2 border rounded"
-                />
-                <button onClick={handleJoinLobby} className="p-4 rounded-xl bg-blue-500 text-white mt-4 hover:bg-blue-700 ml-2">
-                    Join Lobby
-                </button>
+                <div className="flex flex-col max-w-64 justify-center p-4  rounded-xl">
+                    <input 
+                        type="text" 
+                        value={portNumber} 
+                        onChange={(e) => setPortNumber(e.target.value)} 
+                        placeholder="Enter port number" 
+                        className="p-2 border rounded text-center"
+                    />
+                    <button onClick={handleJoinLobby} className="p-4 rounded-xl bg-blue-500 text-white mt-4 hover:bg-blue-700">
+                        Join Lobby
+                    </button>
+                </div>
+
+                <p>or</p>
+
+                <div className="p-4 rounded-xl max-w-64">
+                    <button onClick={handleCreateLobby} className="p-4 rounded-xl bg-blue-500 w-48 text-white hover:bg-blue-700">
+                        Create Lobby
+                    </button>
+
+                </div>
+
+                
             </div>
+
+            
         </div>
     );
 }
