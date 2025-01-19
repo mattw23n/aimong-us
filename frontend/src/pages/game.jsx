@@ -83,12 +83,11 @@ export default function Game() {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!inputMessage.trim()) return;
-
+    
         ws.send(
             JSON.stringify({
-                type: 'chat',
-                author: sessionId,
-                message: inputMessage,
+                action: 'chat', // Correct key
+                message: inputMessage, // Matches what the back-end expects
             })
         );
         setInputMessage('');
