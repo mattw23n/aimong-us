@@ -365,3 +365,74 @@ class SessionService:
         cls.sessions.pop(session_id, None)
         cls.connections.pop(session_id, None)
         print(f"Session {session_id} successfully cleaned up.")
+
+@classmethod
+async def initiate_voting(cls, session_id: str):
+    """
+    Initiates the voting process for a session.
+    """
+    # Retrieve the session using session_id
+    session = cls.sessions.get(session_id)
+    if not session:
+        await cls.broadcast_message(session_id, {"type": "error", "message": "Session not found."})
+        return
+
+    # Broadcast voting start
+    voting_start_message = {
+        "type": "voting_start",
+        "message": "Time is up! Cast your votes for who you think the AI is."
+    }
+    await cls.broadcast_message(session_id, voting_start_message)
+
+    # Allow time for voting
+    await asyncio.sleep(15)  # Adjust duration as needed
+
+    # Tally votes
+    vote_counts = {}
+    for target_id in session.votes.values():
+        vote_counts[target_id] = vote_counts.get(target_id, 0) + 1
+
+    if not vote_counts:
+        await cls.broadcast_message(session_id, {"type": "voting_result", "message": "No votes cast. Game will now end."})
+        await cls.end_session(session_id)
+        return
+
+    # Determine the player with the most votes
+    highest_votes = max(vote_counts.values())
+    most_voted_id = next((target_id for target_id, count in vote_counts.items() if count == highest_votes), None)
+
+    # Find the player's name
+    most_voted_player = next((p.name for p in session.players if p.id == most_voted_id), "Unknown")
+
+    # Broadcast the voting results
+    voting_result_message = {
+        "type": "voting_result",
+        "message": f"The player with the most votes is {most_voted_player} with {highest_votes} vote(s)."
+    }
+    await cls.broadcast_message(session_id, voting_result_message)
+
+    # Handle elimination
+    eliminated_player = next((p for p in session.players if p.id == most_voted_id), None)
+    if eliminated_player:
+        session.players.remove(eliminated_player)
+        session.eliminated.append(eliminated_player)
+
+        # Broadcast elimination
+        elimination_message = {
+            "type": "elimination",
+            "message": f"Player {eliminated_player.name} has been eliminated."
+        }
+        await cls.broadcast_message(session_id, elimination_message)
+
+        # Check if the eliminated player is the AI
+        if eliminated_player.is_ai:
+            await cls.broadcast_message(session_id, {"type": "game_over", "message": "Game Over! The players win!"})
+        else:
+            await cls.broadcast_message(session_id, {"type": "game_over", "message": "Game Over! The players failed to eliminate the AI."})
+
+        # End the session
+        await cls.end_session(session_id)
+    else:
+        await cls.broadcast_message(session_id, {"type": "error", "message": "Error determining elimination. Game will now end."})
+        await cls.end_session(session_id)
+
