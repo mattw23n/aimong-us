@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Dict, List, Optional
 from datetime import datetime
 from model.player import Player
 from model.message import Message
@@ -12,4 +12,7 @@ class GameSession(BaseModel):
     ai_player: Optional[Player] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    votes: Dict[int, int] = {}
+    eliminated: List[Player] = []  # Eliminated players
+
     
